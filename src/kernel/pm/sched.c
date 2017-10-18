@@ -68,8 +68,12 @@ PUBLIC void yield(void)
 	struct process *next; /* Next process to run. */
 
 	/* Re-schedule process for execution. */
-	if (curr_proc->state == PROC_RUNNING)
+	if (curr_proc->state == PROC_RUNNING) {
+	  	if (curr_proc->queue < 7) { // Limite de 8 filas
+			curr_proc->queue++;
+		}
 		sched(curr_proc);
+	}
 
 	/* Remember this process. */
 	last_proc = curr_proc;
@@ -93,28 +97,44 @@ PUBLIC void yield(void)
 		/* Skip non-ready process. */
 		if (p->state != PROC_READY)
 			continue;
-		
+
 		/*
-		 * Process with higher
-		 * waiting time found.
+		 * O processo na fila de maior prioridade
+		 * será o escolhido
 		 */
-		if (p->counter > next->counter)
-		{
+		if (p->queue < next->queue) {
 			next->counter++;
 			next = p;
 		}
-			
+		else if (p->queue == next->queue) {
+			/*
+			 * Dentro da mesma fila, o processo escolhido
+			 * é o que está esperando a mais tempo.
+			 */
+			if (p->counter > next->counter) {
+				next->counter++;
+				next = p;
+			} else {
+				p->counter++;
+			}
+		}			
 		/*
 		 * Increment waiting
-		 * time of process.
 		 */
 		else
 			p->counter++;
+
+		/* Aging para evitar postergação indefinida */
+		if (p->counter > 15 && p->queue > 0){
+			p->queue--;
+			p->counter = 0;			
+		}
+		
 	}
 	
 	/* Switch to next process. */
 	next->priority = PRIO_USER;
 	next->state = PROC_RUNNING;
-	next->counter = PROC_QUANTUM;
+	next->counter = 15 + 10*(next->queue + 1); //PROC_QUANTUM;
 	switch_to(next);
 }

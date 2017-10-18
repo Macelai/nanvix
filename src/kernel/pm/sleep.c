@@ -64,6 +64,12 @@ PUBLIC void sleep(struct process **chain, int priority)
 	 */
 	if ((priority >= 0) && (curr_proc->received))
 		return;
+
+	/* Processo que sofreu parada por chamada de sistema
+	 * vai para uma fila de maior prioridade.
+	 */
+	if (curr_proc->queue > 0)  // Processos na fila 0 continuam nela
+		curr_proc->queue--;
 		
 	/* Insert process in the sleeping chain. */
 	curr_proc->next = *chain;

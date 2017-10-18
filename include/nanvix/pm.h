@@ -201,6 +201,7 @@
     	int counter;             /**< Remaining quantum.      */
     	int priority;            /**< Process priorities.     */
     	int nice;                /**< Nice for scheduling.    */
+		int queue;               /**< Fila do processo        */
     	unsigned alarm;          /**< Alarm.                  */
 		struct process *next;    /**< Next process in a list. */
 		struct process **chain;  /**< Sleeping chain.         */
