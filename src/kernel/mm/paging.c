@@ -284,6 +284,9 @@ PRIVATE struct
 	addr_t addr;    /**< Address of the page. */
 } frames[NR_FRAMES] = {{0, 0, 0, 0},  };
 
+int i = 0;      /* Loop index.  */
+unsigned int t = 1000;   /* Base interval. */
+
 /**
  * @brief Allocates a page frame.
  * 
@@ -292,14 +295,9 @@ PRIVATE struct
  */
 PRIVATE int allocf(void)
 {
-	int i;      /* Loop index.  */
-	int oldest; /* Oldest page. */
-	
-	#define OLDEST(x, y) (frames[x].age < frames[y].age)
 	
 	/* Search for a free frame. */
-	oldest = -1;
-	for (i = 0; i < NR_FRAMES; i++)
+	while (1)
 	{
 		/* Found it. */
 		if (frames[i].count == 0)
@@ -312,23 +310,40 @@ PRIVATE int allocf(void)
 			if (frames[i].count > 1)
 				continue;
 			
-			/* Oldest page found. */
-			if ((oldest < 0) || (OLDEST(i, oldest)))
-				oldest = i;
+			struct pte *curr_page = getpte(curr_proc, frames[i].addr);
+
+			if (curr_page->accessed) // se foi acessada, atuliza tempo
+			{
+				curr_page->accessed = 0;
+				frames[i].age = curr_proc->utime;
+				continue;
+			}
+			else
+			{
+				unsigned int age = curr_proc->utime - frames[i].age; // calculo da idade
+				if (age > t) // se idade for maior que intervalo base
+				{
+					if (curr_page->dirty) // se pagina modificada
+					{
+						if (swap_out(curr_proc, frames[i].addr)) // escalona????? sei la
+							return (-1);
+						curr_page->dirty = 0; // ???????
+					}
+					else // nao modificada, remove
+					{
+						goto found;
+					}
+				}
+			}
+
 		}
+		i = (i + 1) % NR_FRAMES;
 	}
 	
-	/* No frame left. */
-	if (oldest < 0)
-		return (-1);
 	
-	/* Swap page out. */
-	if (swap_out(curr_proc, frames[i = oldest].addr))
-		return (-1);
 	
 found:		
 
-	frames[i].age = ticks;
 	frames[i].count = 1;
 	
 	return (i);
