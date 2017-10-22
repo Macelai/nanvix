@@ -308,6 +308,10 @@ PRIVATE int allocf(void)
 				if (!curr_page->dirty) // limpa
 					goto found;
 			}
+			struct pte *curr_page = getpte(curr_proc, frames[i].addr);
+			if (swap_out(curr_proc, frames[i].addr))
+				return (-1);
+			curr_page->dirty = 0;
 			goto found;
 		}
 		i = (i + 1) % NR_FRAMES;
