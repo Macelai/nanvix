@@ -284,7 +284,7 @@ PRIVATE struct
 	addr_t addr;    /**< Address of the page. */
 } frames[NR_FRAMES] = {{0, 0, 0, 0},  };
 
-int i = 0;      /* Loop index.  */
+int i = -1;      /* Loop index.  */
 unsigned int t = 1000;   /* Base interval. */
 
 /**
@@ -299,6 +299,7 @@ PRIVATE int allocf(void)
 	/* Search for a free frame. */
 	while (1)
 	{
+		i = (i + 1) % NR_FRAMES;
 		/* Found it. */
 		if (frames[i].count == 0)
 			goto found;
@@ -337,7 +338,6 @@ PRIVATE int allocf(void)
 			}
 
 		}
-		i = (i + 1) % NR_FRAMES;
 	}
 	
 	
