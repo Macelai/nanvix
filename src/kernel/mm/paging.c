@@ -302,11 +302,23 @@ PRIVATE int allocf(void)
 		count++;
 		if (count > NR_FRAMES) //volta completa
 		{
-			for (i = 0; i < NR_FRAMES; i++)
+			for (i = 0; i < NR_FRAMES; i++) // procura a primeira que foi escalonado (dirty = 0)
 			{
+				if (frames[i].owner != curr_proc->pid || frames[i].count > 1)
+					continue;
 				struct pte *curr_page = getpte(curr_proc, frames[i].addr);
 				if (!curr_page->dirty) // limpa
 					goto found;
+			}
+			for (i = 0; i < NR_FRAMES; i++) // nenhuma com dirty = 0, retira a primeira valida
+			{
+				if (frames[i].owner != curr_proc->pid || frames[i].count > 1)
+					continue;
+				struct pte *curr_page = getpte(curr_proc, frames[i].addr);
+				if (swap_out(curr_proc, frames[i].addr))
+					return (-1);
+				curr_page->dirty = 0;
+				goto found;			
 			}
 			struct pte *curr_page = getpte(curr_proc, frames[i].addr);
 			if (swap_out(curr_proc, frames[i].addr))
@@ -358,7 +370,8 @@ PRIVATE int allocf(void)
 	
 	
 found:		
-
+	
+	frames[i].age = curr_proc->utime;
 	frames[i].count = 1;
 	count = 0;
 	return (i);

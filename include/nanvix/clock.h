@@ -23,7 +23,7 @@
 	#include <nanvix/const.h>
 	
 	/* Clock frequency (in hertz). */
-	#define CLOCK_FREQ 1000
+	#define CLOCK_FREQ 2000
 	
 	/* Current time. */
 	#define CURRENT_TIME (startup_time + ticks/CLOCK_FREQ)
