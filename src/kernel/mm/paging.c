@@ -286,7 +286,8 @@ PRIVATE struct
 
 int i = -1;      /* Loop index.  */
 unsigned int t = 1000;   /* Base interval. */
-
+int count = 0;
+int nr = NR_FRAMES;
 /**
  * @brief Allocates a page frame.
  * 
@@ -295,10 +296,20 @@ unsigned int t = 1000;   /* Base interval. */
  */
 PRIVATE int allocf(void)
 {
-	
 	/* Search for a free frame. */
 	while (1)
 	{
+		count++;
+		if (count > NR_FRAMES) //volta completa
+		{
+			for (i = 0; i < NR_FRAMES; i++)
+			{
+				struct pte *curr_page = getpte(curr_proc, frames[i].addr);
+				if (!curr_page->dirty) // limpa
+					goto found;
+			}
+			goto found;
+		}
 		i = (i + 1) % NR_FRAMES;
 		/* Found it. */
 		if (frames[i].count == 0)
