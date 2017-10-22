@@ -360,7 +360,7 @@ PRIVATE int allocf(void)
 found:		
 
 	frames[i].count = 1;
-	
+	count = 0;
 	return (i);
 }
 
