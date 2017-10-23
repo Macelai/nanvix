@@ -286,8 +286,7 @@ PRIVATE struct
 
 int i = -1;      /* Loop index.  */
 unsigned int t = 1000;   /* Base interval. */
-int count = 0;
-int nr = NR_FRAMES;
+int cycle = 0;
 /**
  * @brief Allocates a page frame.
  * 
@@ -299,18 +298,21 @@ PRIVATE int allocf(void)
 	/* Search for a free frame. */
 	while (1)
 	{
-		count++;
-		if (count > NR_FRAMES) //volta completa
+		cycle++;
+		if (cycle > NR_FRAMES) //volta completa
 		{
-			for (i = 0; i < NR_FRAMES; i++) // procura a primeira que foi escalonado (dirty = 0)
+			// procura a primeira que foi escalonada na volta anterior (dirty = 0)
+			for (cycle = 0; cycle < NR_FRAMES; cycle++)
 			{
+				i = (i + 1) % NR_FRAMES;
 				if (frames[i].owner != curr_proc->pid || frames[i].count > 1)
 					continue;
 				struct pte *curr_page = getpte(curr_proc, frames[i].addr);
 				if (!curr_page->dirty) // limpa
 					goto found;
 			}
-			for (i = 0; i < NR_FRAMES; i++) // nenhuma com dirty = 0, retira a primeira valida
+			// se nenhuma com dirty = 0, retira a primeira válida
+			for (i = 0; i < NR_FRAMES; i++)
 			{
 				if (frames[i].owner != curr_proc->pid || frames[i].count > 1)
 					continue;
@@ -318,62 +320,59 @@ PRIVATE int allocf(void)
 				if (swap_out(curr_proc, frames[i].addr))
 					return (-1);
 				curr_page->dirty = 0;
-				goto found;			
+				goto found;
+				
 			}
-			struct pte *curr_page = getpte(curr_proc, frames[i].addr);
-			if (swap_out(curr_proc, frames[i].addr))
-				return (-1);
-			curr_page->dirty = 0;
-			goto found;
 		}
-		i = (i + 1) % NR_FRAMES;
-		/* Found it. */
-		if (frames[i].count == 0)
-			goto found;
-		
-		/* Local page replacement policy. */
-		if (frames[i].owner == curr_proc->pid)
+		else
 		{
+			i = (i + 1) % NR_FRAMES;
+			/* Found it. */
+			if (frames[i].count == 0)
+				goto found;
+		
+			/* Local page replacement policy. */
+			if (frames[i].owner == curr_proc->pid)
+			{
 			/* Skip shared pages. */
-			if (frames[i].count > 1)
-				continue;
+				if (frames[i].count > 1)
+					continue;
 			
-			struct pte *curr_page = getpte(curr_proc, frames[i].addr);
+				struct pte *curr_page = getpte(curr_proc, frames[i].addr);
 
-			if (curr_page->accessed) // se foi acessada, atuliza tempo
-			{
-				curr_page->accessed = 0;
-				frames[i].age = curr_proc->utime;
-				continue;
-			}
-			else
-			{
-				unsigned int age = curr_proc->utime - frames[i].age; // calculo da idade
-				if (age > t) // se idade for maior que intervalo base
+				if (curr_page->accessed) // se foi acessada, atuliza tempo
 				{
-					if (curr_page->dirty) // se pagina modificada
+					curr_page->accessed = 0;
+					frames[i].age = curr_proc->utime;
+					continue;
+				}
+				else
+				{
+					unsigned int age = curr_proc->utime - frames[i].age; // calculo da idade
+					if (age > t) // se idade for maior que intervalo base
 					{
-						if (swap_out(curr_proc, frames[i].addr)) // escalona????? sei la
-							return (-1);
-						curr_page->dirty = 0; // ???????
-					}
-					else // nao modificada, remove
-					{
-						goto found;
+						if (curr_page->dirty) // se pagina modificada
+						{
+							if (swap_out(curr_proc, frames[i].addr)) // escalona
+								return (-1);
+							curr_page->dirty = 0;
+						}
+						else // nao modificada, remove
+						{
+							goto found;
+						}
 					}
 				}
 			}
-
 		}
 	}
 	
 	
 	
-found:		
-	
-	frames[i].age = curr_proc->utime;
+found:
 	frames[i].count = 1;
-	count = 0;
+	cycle = 0;
+	
 	return (i);
 }
 
