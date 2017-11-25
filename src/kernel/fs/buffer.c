@@ -313,6 +313,46 @@ PUBLIC struct buffer *bread(dev_t dev, block_t num)
 	if (buf->flags & BUFFER_VALID)
 		return (buf);
 
+	buf->flags |= BUFFER_SYNC;
+
+	bdev_readblk(buf);
+	
+	/* Update buffer flags. */
+	buf->flags |= BUFFER_VALID;
+	buf->flags &= ~BUFFER_DIRTY;
+	
+	return (buf);
+}
+
+/**
+ * @brief Reads a block asynchronously from a device.
+ * 
+ * @details Reads the block numbered num asynchronously from the device numbered
+ *          dev.
+ * 
+ * @param dev Device number.
+ * @param num Block number.
+ * 
+ * @returns Upon successful completion, a pointer to a buffer holding the
+ *          requested block is returned. In this case, the block buffer is 
+ *          ensured to be locked. Upon failure, a NULL pointer is returned
+ *          instead.
+ * 
+ * @note The device number should be valid.
+ * @note The block number should be valid.
+ */
+PUBLIC struct buffer *asyncbread(dev_t dev, block_t num)
+{
+	struct buffer *buf;
+	
+	buf = getblk(dev, num);
+	
+	/* Valid buffer? */
+	if (buf->flags & BUFFER_VALID)
+		return (buf);
+
+	buf->flags &= ~BUFFER_SYNC;
+
 	bdev_readblk(buf);
 	
 	/* Update buffer flags. */
