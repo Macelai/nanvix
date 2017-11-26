@@ -33,6 +33,9 @@
 	#define MAY_EXEC  (S_IXUSR | S_IXGRP | S_IXOTH)     /* May exec/search. */
 	#define MAY_ALL   (MAY_READ | MAY_WRITE | MAY_EXEC) /* May anything.    */
 
+	/* IO Block Prefetching */
+	#define NUM_PREFETCH 4
+
 #ifndef _ASM_FILE_
 
 	#include <fs/minix.h>

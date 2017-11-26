@@ -325,6 +325,20 @@ PUBLIC ssize_t file_read(struct inode *i, void *buf, size_t n, off_t off)
 		p += chunk;
 	} while (n > 0);
 
+	// Prefetch @NUM_PREFETCH extra blocks
+	for (int x = NUM_PREFETCH * BLOCK_SIZE; x > 0; x -= chunk) {
+		blk = block_map(i, off, 0);
+
+		/* End of file reached. */
+		if (blk == BLOCK_NULL)
+			goto out;
+
+		bbuf = asyncbread(i->dev, blk);
+		brelse(bbuf);
+
+		off += chunk;
+	}
+
 out:
 	inode_touch(i);
 	inode_unlock(i);

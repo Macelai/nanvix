@@ -1,0 +1,3 @@
+target remote :1234
+handle SIGSEGV nopass noprint nostop
+symbol-file bin/kernel
