@@ -857,6 +857,8 @@ PUBLIC void inode_init(void)
 		inodes[i].free_next = ((i + 1) < NR_INODES) ? &inodes[i + 1] : NULL;
 		inodes[i].hash_next = NULL;
 		inodes[i].hash_prev = NULL;
+		inodes[i].last_block = 0;
+		inodes[i].prefetching = 0;
 	}
 	
 	/* Initialize inode cache. */

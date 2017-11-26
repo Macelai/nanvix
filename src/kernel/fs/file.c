@@ -292,6 +292,15 @@ PUBLIC ssize_t file_read(struct inode *i, void *buf, size_t n, off_t off)
 	
 	inode_lock(i);
 	
+	// Test if its reading sequentially
+	block_t pfblk = block_map(i, off, 0);
+	if (pfblk == i->last_block || pfblk == i->last_block+1) {
+		i->prefetching = 1;
+	}
+	else {
+		i->prefetching = 0;
+	}
+
 	/* Read data. */
 	do
 	{
@@ -324,19 +333,22 @@ PUBLIC ssize_t file_read(struct inode *i, void *buf, size_t n, off_t off)
 		off += chunk;
 		p += chunk;
 	} while (n > 0);
+	i->last_block = blk;
 
 	// Prefetch @NUM_PREFETCH extra blocks
-	for (int x = NUM_PREFETCH * BLOCK_SIZE; x > 0; x -= chunk) {
-		blk = block_map(i, off, 0);
+	if (i->prefetching == 1) {
+		for (int x = NUM_PREFETCH * BLOCK_SIZE; x > 0; x -= chunk) {
+			blk = block_map(i, off, 0);
 
-		/* End of file reached. */
-		if (blk == BLOCK_NULL)
-			goto out;
+			/* End of file reached. */
+			if (blk == BLOCK_NULL)
+				goto out;
 
-		bbuf = asyncbread(i->dev, blk);
-		brelse(bbuf);
+			bbuf = asyncbread(i->dev, blk);
+			brelse(bbuf);
 
-		off += chunk;
+			off += chunk;
+		}
 	}
 
 out:

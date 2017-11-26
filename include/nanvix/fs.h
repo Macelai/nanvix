@@ -127,6 +127,8 @@
 		struct inode *hash_next;  /**< Next inode in the hash table.         */
 		struct inode *hash_prev;  /**< Previous inode in the hash table.     */
 		struct process *chain;    /**< Sleeping chain.                       */
+		block_t last_block;
+		uint8_t prefetching;
 	};
 	
 	/**@}*/
